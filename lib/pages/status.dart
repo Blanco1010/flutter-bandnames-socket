@@ -11,11 +11,16 @@ class StatuPage extends StatelessWidget {
     final socketService = Provider.of<SocketService>(context);
 
     return Container(
-        child: Scaffold(
-      appBar: AppBar(
-        title: Text('Estados'),
-        centerTitle: true,
+      child: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text('ServerStatus: ${socketService.serverStatus}')
+            ],
+          ),
+        ),
       ),
-    ));
+    );
   }
 }
