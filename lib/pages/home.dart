@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:bands_name/services/socket_service.dart';
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:bands_name/models/band.dart';
 import 'package:provider/provider.dart';
@@ -11,12 +11,26 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Band> bands = [
-    Band(id: '1', name: 'Python', votes: 1),
-    Band(id: '2', name: 'C++', votes: 6),
-    Band(id: '3', name: 'Java', votes: 7),
-    Band(id: '4', name: 'C#', votes: 3),
-  ];
+  List<Band> bands = [];
+
+  @override
+  void initState() {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+
+    socketService.socket.on('active-bands', (payload) {
+      this.bands = (payload as List).map((band) => Band.fromMap(band)).toList();
+      setState(() {});
+    });
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+    socketService.socket.off('active-bands', (data) => null);
+    super.dispose();
+  }
 
   Widget build(BuildContext context) {
     final socketService = Provider.of<SocketService>(context);
@@ -48,6 +62,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _bandTile(Band band) {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+
     return Dismissible(
       key: Key(band.id),
       direction: DismissDirection.startToEnd,
@@ -74,7 +90,7 @@ class _HomePageState extends State<HomePage> {
         title: Text(band.name),
         trailing: Text('${band.votes}', style: TextStyle(fontSize: 22.5)),
         onTap: () {
-          print('${band.name}');
+          socketService.socket.emit('vote-band', {'id': band.id});
         },
       ),
     );
@@ -128,12 +144,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   void addBandToList(String name) {
+    final socketService = Provider.of<SocketService>(context, listen: false);
     if (name.length > 1) {
-      //agregar
-      this
-          .bands
-          .add(new Band(id: DateTime.now().toString(), name: name, votes: 0));
-      setState(() {});
+      socketService.socket.emit('add-band', {'name': name});
     }
     Navigator.pop(context);
   }
